@@ -1,25 +1,25 @@
 //Route files with express routes
+
 const express = require('express');
 const router = express.Router();
-const gravatar = require('gravatar');
+const gravatar = require('gravatar'); //uses gravatar package
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const jwt = 'jsonwebtoken';
 const config = require('config');
-const { check, validationResult } = require('express-validator');
-
 const User = require('../../models/User');
+const { check, validationResult } = require('express-validator'); //express-validator/check is deprecated
+//*req=request, res=response*
 
-//req=request, res=response
-// @route    POST api/users
-// @desc     Register user
-// @access   Public
+//@route  POST api/users
+//@desc   Register user
+//@access Public
 router.post(
   '/',
   [
     check('name', 'Name is required')
       .not()
       .isEmpty(),
-    check('email', 'Please include a valid email').isEmail(),
+    check('email', 'Please include a valid email ').isEmail(),
     check(
       'password',
       'Please enter a password with 6 or more characters'
@@ -28,13 +28,14 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() }); // if they dont include the
+      //information above its a bad request(400)
     }
-    //status(400) is a bad request
+
     const { name, email, password } = req.body;
 
     try {
-      // see if user exists
+      //See if user exists
       let user = await User.findOne({ email });
 
       if (user) {
@@ -42,6 +43,7 @@ router.post(
           .status(400)
           .json({ errors: [{ msg: 'User already exists' }] });
       }
+
       //Get user gravatar
       const avatar = gravatar.url(email, {
         s: '200',
@@ -55,7 +57,8 @@ router.post(
         avatar,
         password
       });
-      //Encrypt a password
+
+      //Encrypt password
       const salt = await bcrypt.genSalt(10);
 
       user.password = await bcrypt.hash(password, salt);
@@ -70,7 +73,7 @@ router.post(
 
       jwt.sign(
         payload,
-        config.get('jwtSecret'), //secret reference from default.json
+        config.get('jwtSecret'), //secret referenced in default.json
         { expiresIn: 360000 },
         (err, token) => {
           if (err) throw err;
@@ -83,5 +86,4 @@ router.post(
     }
   }
 );
-
 module.exports = router;
